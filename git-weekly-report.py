@@ -10,16 +10,16 @@ import argparse
 import json
 import os
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 import re
 import requests
 
 
 class LLMEnhancer:
-    def __init__(self, api_key: str = None, model: str = "gpt-3.5-turbo"):
-        self.api_key = api_key or os.getenv('OPENAI_API_KEY')
+    def __init__(self, api_key: Union[str, None] = None, model: str = "openai/gpt-3.5-turbo"):
+        self.api_key = api_key or os.getenv('OPENROUTER_API_KEY')
         self.model = model
-        self.base_url = "https://api.openai.com/v1/chat/completions"
+        self.base_url = "https://openrouter.ai/api/v1/chat/completions"
     
     def enhance_commit_message(self, message: str) -> str:
         """使用 LLM 翻译和润色 commit 消息"""
@@ -37,7 +37,9 @@ class LLMEnhancer:
                 self.base_url,
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://github.com/user/git-weekly-report",
+                    "X-Title": "Git Weekly Report Generator"
                 },
                 json={
                     "model": self.model,
@@ -79,7 +81,9 @@ class LLMEnhancer:
                 self.base_url,
                 headers={
                     "Authorization": f"Bearer {self.api_key}",
-                    "Content-Type": "application/json"
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://github.com/user/git-weekly-report",
+                    "X-Title": "Git Weekly Report Generator"
                 },
                 json={
                     "model": self.model,
@@ -102,7 +106,7 @@ class LLMEnhancer:
 
 
 class GitWeeklyReport:
-    def __init__(self, repo_path: str = ".", use_llm: bool = False, api_key: str = None, author: str = None):
+    def __init__(self, repo_path: str = ".", use_llm: bool = False, api_key: Union[str, None] = None, author: Union[str, None] = None):
         self.repo_path = repo_path
         self.use_llm = use_llm
         self.llm = LLMEnhancer(api_key) if use_llm else None
@@ -359,8 +363,8 @@ def main():
     parser.add_argument("--repo", "-r", default=".", help="Git 仓库路径 (默认: 当前目录)")
     parser.add_argument("--output", "-o", help="输出文件路径 (默认: 输出到控制台)")
     parser.add_argument("--use-llm", action="store_true", help="使用 LLM 增强周报内容")
-    parser.add_argument("--api-key", help="OpenAI API Key (也可通过环境变量 OPENAI_API_KEY 设置)")
-    parser.add_argument("--model", default="gpt-3.5-turbo", help="LLM 模型 (默认: gpt-3.5-turbo)")
+    parser.add_argument("--api-key", help="OpenRouter API Key (也可通过环境变量 OPENROUTER_API_KEY 设置)")
+    parser.add_argument("--model", default="openai/gpt-3.5-turbo", help="LLM 模型 (默认: openai/gpt-3.5-turbo)")
     parser.add_argument("--author", "-a", help="指定作者姓名，只生成该作者的周报")
     parser.add_argument("--list-authors", action="store_true", help="列出仓库中所有作者")
     
@@ -387,10 +391,10 @@ def main():
     
     # 如果使用 LLM，检查 API Key
     if args.use_llm:
-        api_key = args.api_key or os.getenv('OPENAI_API_KEY')
+        api_key = args.api_key or os.getenv('OPENROUTER_API_KEY')
         if not api_key:
-            print("错误: 使用 LLM 功能需要提供 OpenAI API Key")
-            print("请通过 --api-key 参数或环境变量 OPENAI_API_KEY 设置")
+            print("错误: 使用 LLM 功能需要提供 OpenRouter API Key")
+            print("请通过 --api-key 参数或环境变量 OPENROUTER_API_KEY 设置")
             return
         print(f"使用 LLM 模型: {args.model}")
     
